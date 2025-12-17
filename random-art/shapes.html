@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Random Art</title>
+</head>
+
+<body>
+    <canvas width="500" height="500"></canvas>
+
+    <script>
+        const canvas = document.querySelector('canvas');
+        const ctx = canvas.getContext('2d');
+
+        function getRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min)) + min;
+        }
+
+        function getRandomColor() {
+            const r = getRandomInt(0, 256);
+            const g = getRandomInt(0, 256);
+            const b = getRandomInt(0, 256);
+            const a = Math.random().toFixed(2);
+            return `rgb(${r},${g},${b}, ${a})`;
+        }
+
+        function drawRandomShapes(numShapes) {
+            for (let i = 0; i < numShapes; i++) {
+                const shapeType = getRandomInt(0, 3);
+                const x = getRandomInt(0, canvas.width);
+                const y = getRandomInt(0, canvas.height);
+                const size = getRandomInt(20, 100);
+                ctx.fillStyle = getRandomColor();
+                ctx.strokeStyle = getRandomColor();
+                ctx.lineWidth = getRandomInt(1, 5);
+
+                switch (shapeType) {
+                    case 0: // Circle
+                        ctx.beginPath();
+                        ctx.arc(x, y, size / 2, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.stroke();
+                        break;
+                    case 1: // Rectangle
+                        ctx.fillRect(x, y, size, size);
+                        ctx.strokeRect(x, y, size, size);
+                        break;
+                    case 2: // Triangle
+                        ctx.beginPath();
+                        ctx.moveTo(x, y);
+                        ctx.lineTo(x + size, y);
+                        ctx.lineTo(x + size / 2, y - size);
+                        ctx.closePath();
+                        ctx.fill();
+                        ctx.stroke();
+                        break;
+                }
+            }
+        }
+
+        drawRandomShapes(1000);
+        setInterval(() => drawRandomShapes(1000), 1000);
+    </script>
+</body>
+
+</html>
