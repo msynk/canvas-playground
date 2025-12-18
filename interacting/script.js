@@ -1,94 +1,139 @@
-const canvas = document.querySelector('canvas');
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+(() => {
+    'use strict';
 
-const COLOR_ARRAY = ['#146152', '#44803F', '#B4CF66', '#FFEC5C', '#FF5A33'];
-const INTERACTIVITY_DISTANCE = 50;
-const CIRCLE_COUNT = 2000;
-const MAX_RADIUS = 40;
-const MIN_RADIUS = 5;
+    const canvas = document.querySelector('canvas');
+    if (!canvas) return;
 
-const mouse = {
-    x: undefined,
-    y: undefined
-};
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
 
-
-window.addEventListener('mousemove', function (event) {
-    mouse.x = event.x;
-    mouse.y = event.y;
-});
-
-window.addEventListener('resize', function () {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    init();
-});
-
-let circles = [];
-function init() {
-    circles = Array.from({ length: CIRCLE_COUNT }, () => {
-        const r = Math.random() * MIN_RADIUS + 1;
-        const x = Math.random() * (canvas.width - 2 * r) + r;
-        const y = Math.random() * (canvas.height - 2 * r) + r;
-        const dx = (Math.random() - 0.5) * 4;
-        const dy = (Math.random() - 0.5) * 4;
-        return new MovingCircle(x, y, r, dx, dy);
+    const config = Object.freeze({
+        colors: ['#146152', '#44803F', '#B4CF66', '#FFEC5C', '#FF5A33'],
+        interactivityDistance: 50,
+        circleCount: 2000,
+        maxRadius: 40,
+        minRadius: 5,
+        maxSpeed: 2,
     });
-}
 
-init();
+    const pointer = { x: null, y: null };
+    let viewport = { width: 0, height: 0, dpr: 1 };
+    let circles = [];
+    let rafId = null;
 
-(function animate() {
-    requestAnimationFrame(animate);
+    function randomBetween(min, max) {
+        return Math.random() * (max - min) + min;
+    }
 
-    canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+    function randomFromArray(array) {
+        return array[Math.floor(Math.random() * array.length)];
+    }
 
-    circles.forEach(circle => circle.update(canvas));
-}());
+    function resizeCanvas() {
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        const dpr = Math.max(1, window.devicePixelRatio || 1);
 
+        canvas.style.width = `${width}px`;
+        canvas.style.height = `${height}px`;
+        canvas.width = Math.floor(width * dpr);
+        canvas.height = Math.floor(height * dpr);
 
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        viewport = { width, height, dpr };
+    }
 
-class MovingCircle {
-    constructor(x, y, r, dx, dy) {
-        this.x = x;
-        this.y = y;
-        this.r = r;
-        this.dx = dx;
-        this.dy = dy;
-        this.minRadius = r;
-        this.color = COLOR_ARRAY[Math.floor(Math.random() * COLOR_ARRAY.length)];
+    function setPointerPosition(event) {
+        const rect = canvas.getBoundingClientRect();
+        pointer.x = event.clientX - rect.left;
+        pointer.y = event.clientY - rect.top;
+    }
 
-        this.draw = function (ctx) {
+    function clearPointer() {
+        pointer.x = null;
+        pointer.y = null;
+    }
+
+    class MovingCircle {
+        constructor({ x, y, r, vx, vy, color }) {
+            this.x = x;
+            this.y = y;
+            this.r = r;
+            this.vx = vx;
+            this.vy = vy;
+            this.minRadius = r;
+            this.color = color;
+        }
+
+        draw(ctx) {
             ctx.beginPath();
-            ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2, false);
+            ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
             ctx.fillStyle = this.color;
             ctx.fill();
+        }
 
-            ctx.closePath();
-        };
+        update({ width, height }, pointer) {
+            if (this.x + this.r > width || this.x - this.r < 0) this.vx = -this.vx;
+            if (this.y + this.r > height || this.y - this.r < 0) this.vy = -this.vy;
 
-        this.update = function (canvas) {
-            if (this.x + this.r > canvas.width || this.x - this.r < 0) {
-                this.dx = -this.dx;
-            }
+            this.x += this.vx;
+            this.y += this.vy;
 
-            if (this.y + this.r > canvas.height || this.y - this.r < 0) {
-                this.dy = -this.dy;
-            }
-
-            this.x += this.dx;
-            this.y += this.dy;
-
-            if (Math.abs(mouse.x - this.x) < INTERACTIVITY_DISTANCE &&
-                Math.abs(mouse.y - this.y) < INTERACTIVITY_DISTANCE &&
-                this.r < MAX_RADIUS) {
-                this.r += 1;
+            const isPointerActive = pointer.x != null && pointer.y != null;
+            if (isPointerActive) {
+                const dx = Math.abs(pointer.x - this.x);
+                const dy = Math.abs(pointer.y - this.y);
+                if (
+                    dx < config.interactivityDistance &&
+                    dy < config.interactivityDistance &&
+                    this.r < config.maxRadius
+                ) {
+                    this.r += 1;
+                } else if (this.r > this.minRadius) {
+                    this.r -= 1;
+                }
             } else if (this.r > this.minRadius) {
                 this.r -= 1;
             }
-
-            this.draw(canvas.getContext('2d'));
-        };
+        }
     }
-}
+
+    function createRandomCircle({ width, height }) {
+        const r = randomBetween(1, config.minRadius + 1);
+        const x = randomBetween(r, width - r);
+        const y = randomBetween(r, height - r);
+        const vx = randomBetween(-config.maxSpeed, config.maxSpeed);
+        const vy = randomBetween(-config.maxSpeed, config.maxSpeed);
+        const color = randomFromArray(config.colors);
+
+        return new MovingCircle({ x, y, r, vx, vy, color });
+    }
+
+    function init() {
+        circles = Array.from({ length: config.circleCount }, () =>
+            createRandomCircle(viewport),
+        );
+    }
+
+    function animate() {
+        rafId = window.requestAnimationFrame(animate);
+
+        ctx.clearRect(0, 0, viewport.width, viewport.height);
+        for (const circle of circles) {
+            circle.update(viewport, pointer);
+            circle.draw(ctx);
+        }
+    }
+
+    window.addEventListener('mouseout', e => e.relatedTarget == null && clearPointer(), { passive: true });
+    window.addEventListener('pointermove', setPointerPosition, { passive: true });
+    window.addEventListener('blur', clearPointer);
+    window.addEventListener('resize', () => {
+        resizeCanvas();
+        init();
+    });
+
+    resizeCanvas();
+    init();
+    animate();
+})();
