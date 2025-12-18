@@ -2,30 +2,42 @@ const canvas = document.querySelector('canvas');
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-const interactivityDistance = 50;
-const circleCount = 2000;
-const maxRadius = 40;
-const minRadius = 5;
+const COLOR_ARRAY = ['#146152', '#44803F', '#B4CF66', '#FFEC5C', '#FF5A33'];
+const INTERACTIVITY_DISTANCE = 50;
+const CIRCLE_COUNT = 2000;
+const MAX_RADIUS = 40;
+const MIN_RADIUS = 5;
+
 const mouse = {
     x: undefined,
     y: undefined
 };
 
-const colorArray = ['#ffaa33', '#99ffaa', '#00ff00', '#4411aa', '#ff1100'];
 
 window.addEventListener('mousemove', function (event) {
     mouse.x = event.x;
     mouse.y = event.y;
 });
 
-const circles = Array.from({ length: circleCount }, () => {
-    const r = minRadius;
-    const x = Math.random() * (canvas.width - 2 * r) + r;
-    const y = Math.random() * (canvas.height - 2 * r) + r;
-    const dx = (Math.random() - 0.5) * 4;
-    const dy = (Math.random() - 0.5) * 4;
-    return new MovingCircle(x, y, r, dx, dy);
+window.addEventListener('resize', function () {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    init();
 });
+
+let circles = [];
+function init() {
+    circles = Array.from({ length: CIRCLE_COUNT }, () => {
+        const r = Math.random() * MIN_RADIUS + 1;
+        const x = Math.random() * (canvas.width - 2 * r) + r;
+        const y = Math.random() * (canvas.height - 2 * r) + r;
+        const dx = (Math.random() - 0.5) * 4;
+        const dy = (Math.random() - 0.5) * 4;
+        return new MovingCircle(x, y, r, dx, dy);
+    });
+}
+
+init();
 
 (function animate() {
     requestAnimationFrame(animate);
@@ -36,13 +48,15 @@ const circles = Array.from({ length: circleCount }, () => {
 }());
 
 
+
 function MovingCircle(x, y, r, dx, dy) {
     this.x = x;
     this.y = y;
     this.r = r;
     this.dx = dx;
     this.dy = dy;
-    this.color = colorArray[Math.floor(Math.random() * colorArray.length)];
+    this.minRadius = r;
+    this.color = COLOR_ARRAY[Math.floor(Math.random() * COLOR_ARRAY.length)];
 
     this.draw = function (ctx) {
         ctx.beginPath();
@@ -65,13 +79,12 @@ function MovingCircle(x, y, r, dx, dy) {
         this.x += this.dx;
         this.y += this.dy;
 
-        if (Math.abs(mouse.x - this.x) < interactivityDistance &&
-            Math.abs(mouse.y - this.y) < interactivityDistance) {
-            if (this.r < maxRadius) {
-                this.r += 2;
-            }
-        } else if (this.r > minRadius) {
-            this.r -= 2;
+        if (Math.abs(mouse.x - this.x) < INTERACTIVITY_DISTANCE &&
+            Math.abs(mouse.y - this.y) < INTERACTIVITY_DISTANCE &&
+            this.r < MAX_RADIUS) {
+            this.r += 1;
+        } else if (this.r > this.minRadius) {
+            this.r -= 1;
         }
 
         this.draw(canvas.getContext('2d'));
