@@ -49,44 +49,46 @@ init();
 
 
 
-function MovingCircle(x, y, r, dx, dy) {
-    this.x = x;
-    this.y = y;
-    this.r = r;
-    this.dx = dx;
-    this.dy = dy;
-    this.minRadius = r;
-    this.color = COLOR_ARRAY[Math.floor(Math.random() * COLOR_ARRAY.length)];
+class MovingCircle {
+    constructor(x, y, r, dx, dy) {
+        this.x = x;
+        this.y = y;
+        this.r = r;
+        this.dx = dx;
+        this.dy = dy;
+        this.minRadius = r;
+        this.color = COLOR_ARRAY[Math.floor(Math.random() * COLOR_ARRAY.length)];
 
-    this.draw = function (ctx) {
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2, false);
-        ctx.fillStyle = this.color;
-        ctx.fill();
+        this.draw = function (ctx) {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2, false);
+            ctx.fillStyle = this.color;
+            ctx.fill();
 
-        ctx.closePath();
-    };
+            ctx.closePath();
+        };
 
-    this.update = function (canvas) {
-        if (this.x + this.r > canvas.width || this.x - this.r < 0) {
-            this.dx = -this.dx;
-        }
+        this.update = function (canvas) {
+            if (this.x + this.r > canvas.width || this.x - this.r < 0) {
+                this.dx = -this.dx;
+            }
 
-        if (this.y + this.r > canvas.height || this.y - this.r < 0) {
-            this.dy = -this.dy;
-        }
+            if (this.y + this.r > canvas.height || this.y - this.r < 0) {
+                this.dy = -this.dy;
+            }
 
-        this.x += this.dx;
-        this.y += this.dy;
+            this.x += this.dx;
+            this.y += this.dy;
 
-        if (Math.abs(mouse.x - this.x) < INTERACTIVITY_DISTANCE &&
-            Math.abs(mouse.y - this.y) < INTERACTIVITY_DISTANCE &&
-            this.r < MAX_RADIUS) {
-            this.r += 1;
-        } else if (this.r > this.minRadius) {
-            this.r -= 1;
-        }
+            if (Math.abs(mouse.x - this.x) < INTERACTIVITY_DISTANCE &&
+                Math.abs(mouse.y - this.y) < INTERACTIVITY_DISTANCE &&
+                this.r < MAX_RADIUS) {
+                this.r += 1;
+            } else if (this.r > this.minRadius) {
+                this.r -= 1;
+            }
 
-        this.draw(canvas.getContext('2d'));
-    };
+            this.draw(canvas.getContext('2d'));
+        };
+    }
 }
