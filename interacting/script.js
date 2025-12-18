@@ -54,50 +54,6 @@
         pointer.y = null;
     }
 
-    class MovingCircle {
-        constructor({ x, y, r, vx, vy, color }) {
-            this.x = x;
-            this.y = y;
-            this.r = r;
-            this.vx = vx;
-            this.vy = vy;
-            this.minRadius = r;
-            this.color = color;
-        }
-
-        draw(ctx) {
-            ctx.beginPath();
-            ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
-            ctx.fillStyle = this.color;
-            ctx.fill();
-        }
-
-        update({ width, height }, pointer) {
-            if (this.x + this.r > width || this.x - this.r < 0) this.vx = -this.vx;
-            if (this.y + this.r > height || this.y - this.r < 0) this.vy = -this.vy;
-
-            this.x += this.vx;
-            this.y += this.vy;
-
-            const isPointerActive = pointer.x != null && pointer.y != null;
-            if (isPointerActive) {
-                const dx = Math.abs(pointer.x - this.x);
-                const dy = Math.abs(pointer.y - this.y);
-                if (
-                    dx < config.interactivityDistance &&
-                    dy < config.interactivityDistance &&
-                    this.r < config.maxRadius
-                ) {
-                    this.r += 1;
-                } else if (this.r > this.minRadius) {
-                    this.r -= 1;
-                }
-            } else if (this.r > this.minRadius) {
-                this.r -= 1;
-            }
-        }
-    }
-
     function createRandomCircle({ width, height }) {
         const r = randomBetween(1, config.minRadius + 1);
         const x = randomBetween(r, width - r);
@@ -132,6 +88,59 @@
         resizeCanvas();
         init();
     });
+
+
+    class MovingCircle {
+        constructor({ x, y, r, vx, vy, color }) {
+            this.x = x;
+            this.y = y;
+            this.r = r;
+            this.vx = vx;
+            this.vy = vy;
+            this.minRadius = r;
+            this.color = color;
+        }
+
+        draw(ctx) {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+            ctx.fillStyle = this.color;
+            ctx.fill();
+        }
+
+        update({ width, height }, pointer) {
+            if (this.x + this.r > width || this.x - this.r < 0) {
+                this.vx = -this.vx;
+            }
+
+            if (this.y + this.r > height || this.y - this.r < 0) {
+                this.vy = -this.vy;
+            }
+
+            this.x += this.vx;
+            this.y += this.vy;
+
+            const isPointerActive = pointer.x != null && pointer.y != null;
+
+            if (!isPointerActive) {
+                if (this.r > this.minRadius) {
+                    this.r -= 1;
+                }
+                return;
+            }
+
+            const dx = Math.abs(pointer.x - this.x);
+            const dy = Math.abs(pointer.y - this.y);
+            if (dx < config.interactivityDistance &&
+                dy < config.interactivityDistance &&
+                this.r < config.maxRadius) {
+                this.r += 1;
+            } else if (this.r > this.minRadius) {
+                this.r -= 1;
+            }
+        }
+    }
+
 
     resizeCanvas();
     init();
